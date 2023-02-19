@@ -12,38 +12,43 @@ import exceptions
 
 load_dotenv()
 
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('TG_CHAT_ID')
+PRACTICUM_TOKEN: str = os.getenv('PRACTICUM_TOKEN')
+TELEGRAM_TOKEN: str = os.getenv('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID: str = os.getenv('TG_CHAT_ID')
 
-RETRY_PERIOD = 600
+RETRY_PERIOD: int = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 
-HOMEWORK_VERDICTS = {
+HOMEWORK_VERDICTS: list = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
 
-def check_tokens():
+def check_tokens() -> str:
     """Проверка наличия всех токенов."""
     logging.info('Проверка наличия всех токенов')
     return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
-def send_message(bot, message):
+def send_message(bot, message) -> str:
     """Отправляет сообщение в Telegram чат."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.debug(f'Бот отправил сообщение "{message}"')
     except telegram.error.TelegramError as error:
         logging.error(f'Бот не отправил сообщение "{message}": {error}')
+        raise exceptions.SendMessageError(
+            f'Ошибка при отправки сообщения: {error}'
+        )
+    else:
+        logging.info('Сообщение успешно отправлено')
 
 
-def get_api_answer(timestamp):
+def get_api_answer(timestamp: int):
     """Получить статус домашки."""
     params_request = {
         'url': ENDPOINT,
@@ -75,7 +80,7 @@ def get_api_answer(timestamp):
         )
 
 
-def check_response(response):
+def check_response(response) -> list:
     """Проверка валидности ответа."""
     logging.debug('Старт проверки')
     if not isinstance(response, dict):
@@ -120,7 +125,7 @@ def main():
             response = get_api_answer(timestamp)
             timestamp = response.get(
                 'current_date',
-                'timestamp'
+                int(time.time())
             )
             new_homeworks = check_response(response)
             if new_homeworks:

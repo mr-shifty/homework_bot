@@ -26,3 +26,9 @@ class EmptyResponseFromAPI(NotSending):
     """Пустой ответ от API."""
 
     pass
+
+
+class SendMessageError(Exception):
+    """Ошибка отправки сообщения."""
+
+    pass
